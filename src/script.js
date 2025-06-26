@@ -1,71 +1,64 @@
-// Sample data of profiles matching usernames
-const profiles = [
-  {
-    id: 1,
-    username: "PNG_Gov_Aid_5050",
-    image: "https://i.imgur.com/aich1.png",
-    followers: "2,300",
-    about: "We offer free grants for PNG families. Apply now!"
-  },
-  {
-    id: 2,
-    username: "GovHelpPNG2024",
-    image: "https://i.imgur.com/aich2.png",
-    followers: "5,120",
-    about: "Claim K1000. Only today. Send phone number."
-  },
-  {
-    id: 3,
-    username: "PNG_Grants_Office",
-    image: "https://i.imgur.com/aich3.png",
-    followers: "980",
-    about: "Helping citizens of PNG with food & cash."
-  }
-];
+const express = require('express');
+const puppeteer = require('puppeteer');
 
-// Search and display matching profiles
-function runCheck() {
-  const input = document.getElementById("inputText").value.toLowerCase().trim();
-  const outputBox = document.getElementById("outputBox");
-  outputBox.innerHTML = "";
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  if (!input) {
-    outputBox.innerHTML = "<p>❗ Please enter a username to check.</p>";
-    return;
+app.get('/search', async (req, res) => {
+  const query = req.query.q;
+  if (!query) {
+    return res.status(400).json({ error: 'Missing query parameter q' });
   }
 
-  const matchedProfiles = profiles.filter(p => p.username.toLowerCase().includes(input));
+  try {
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
 
-  if (matchedProfiles.length === 0) {
-    outputBox.innerHTML = "<p>❗ No matching profiles found.</p>";
-    return;
+    // Facebook search URL for people search
+    const searchUrl = `https://www.facebook.com/search/people/?q=${encodeURIComponent(query)}`;
+
+    await page.goto(searchUrl, { waitUntil: 'networkidle2' });
+
+    // Wait for search results container
+    await page.waitForSelector('[aria-label="Search Results"]', { timeout: 10000 });
+
+    // Extract profiles
+    const profiles = await page.evaluate(() => {
+      const profileNodes = Array.from(document.querySelectorAll('[aria-label="Search Results"] a[href*="facebook.com"]'));
+      const results = [];
+
+      for (let node of profileNodes) {
+        const href = node.href;
+        const name = node.querySelector('span')?.innerText || '';
+        const img = node.querySelector('img')?.src || null;
+        if (name && href) {
+          results.push({
+            name,
+            profileUrl: href,
+            image: img
+          });
+        }
+        if (results.length >= 5) break;
+      }
+      return results;
+    });
+
+    await browser.close();
+
+    if (!profiles.length) {
+      return res.json({ message: 'No profiles found' });
+    }
+
+    return res.json(profiles);
+
+  } catch (err) {
+    console.error('Error scraping Facebook:', err);
+    return res.status(500).json({ error: 'Failed to scrape Facebook' });
   }
+});
 
-  matchedProfiles.forEach(profile => {
-    const card = document.createElement("div");
-    card.className = "profile-card";
-    card.innerHTML = `
-      <img src="${profile.image}" alt="${profile.username}" />
-      <div class="info">
-        <h3>${profile.username}</h3>
-        <p>${profile.about}</p>
-        <p><strong>Followers:</strong> ${profile.followers}</p>
-        <button onclick="checkProfile('${profile.username}')">Run Aich Check</button>
-      </div>
-    `;
-    outputBox.appendChild(card);
-  });
-}
-
-// Check selected profile and show result
-function checkProfile(username) {
-  const outputBox = document.getElementById("outputBox");
-  outputBox.innerHTML = `
-    <div class="check-result">
-      <h3>🛑 Aich Check Result for "${username}"</h3>
-      <p>⚠️ This account shows signs of being <strong>FAKE or FRAUDULENT</strong>.</p>
-      <p>Please report it and do not send money or personal details.</p>
-      <button onclick="runCheck()">Back to Search</button>
-    </div>
-  `;
-}
+app.listen(PORT, () => {
+  console.log(`Facebook profile scraper API running on port ${PORT}`);
+});
