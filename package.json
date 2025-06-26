@@ -5,6 +5,9 @@
   "scripts": {
     "build": "echo \"Build script placeholder\""
   },
+  "engines": {
+    "node": ">=18 <19"
+  },
   "dependencies": {},
   "devDependencies": {}
 }
