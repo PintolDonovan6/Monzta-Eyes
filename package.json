@@ -1,0 +1,10 @@
+{
+  "name": "monzta-eyes",
+  "version": "1.0.0",
+  "description": "Aich Check project for PNG",
+  "scripts": {
+    "build": "echo \"Build script placeholder\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
