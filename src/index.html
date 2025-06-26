@@ -1,29 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aich Check - PNG</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aich Check PNG - Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f2f2f2;
+      color: #333;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, button {
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #00703c;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005f2d;
+    }
+    #outputBox {
+      margin-top: 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .profile-card {
+      display: flex;
+      margin: 10px 0;
+      background: #fefefe;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+    .profile-card img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+    }
+    .profile-card .info {
+      padding: 10px;
+      flex: 1;
+    }
+    .profile-card h3 {
+      margin: 0 0 5px 0;
+      font-size: 18px;
+    }
+    .profile-card button {
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .profile-card button:hover {
+      background: #a93226;
+    }
+    .check-result {
+      background: #ffe6e6;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #f5b7b1;
+      text-align: center;
+    }
+    .check-result button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      background: #00703c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .check-result button:hover {
+      background: #005f2d;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Aich Check 🇵🇬</h1>
-    <p>Type a suspicious username or fake account name below:</p>
-    <input type="text" id="inputText" placeholder="e.g. PNG_Gov_Aid_5050" />
-    <button onclick="runCheck()">Run Check</button>
-    <div id="outputBox"></div>
-  </div>
 
-  <footer>
-    <h3>🛡️ Digital Safety Tips for PNG:</h3>
-    <ul>
-      <li>Fake accounts often promise free cash or jobs.</li>
-      <li>Check for typos, random numbers, or reused logos.</li>
-      <li>Never share personal info with unverified users.</li>
-    </ul>
-  </footer>
+  <h1>Aich Check PNG</h1>
+  <input type="text" id="inputText" placeholder="Type a username to check" />
+  <button id="searchBtn">Run Check</button>
 
-  <script src="script.js"></script>
+  <div id="outputBox"></div>
+
+  <script>
+    // Mock data simulating Facebook profile search results
+    const MOCK_PROFILES = [
+      {
+        name: "PNG_Gov_Aid_Official",
+        image: "https://i.imgur.com/aich1.png",
+        profileUrl: "https://facebook.com/PNG_Gov_Aid_Official",
+      },
+      {
+        name: "PNG_Gov_Aid_Support",
+        image: "https://i.imgur.com/aich2.png",
+        profileUrl: "https://facebook.com/PNG_Gov_Aid_Support",
+      },
+      {
+        name: "PNG_Gov_Aid_HelpDesk",
+        image: "https://i.imgur.com/aich3.png",
+        profileUrl: "https://facebook.com/PNG_Gov_Aid_HelpDesk",
+      },
+    ];
+
+    function runCheck() {
+      const input = document.getElementById("inputText").value.trim();
+      const outputBox = document.getElementById("outputBox");
+      outputBox.innerHTML = "";
+
+      if (!input) {
+        outputBox.innerHTML = "<p>❗ Please enter a username to check.</p>";
+        return;
+      }
+
+      // Filter mock profiles by input text (case-insensitive)
+      const matchedProfiles = MOCK_PROFILES.filter(p =>
+        p.name.toLowerCase().includes(input.toLowerCase())
+      );
+
+      if (matchedProfiles.length === 0) {
+        outputBox.innerHTML = "<p>❗ No profiles found matching that username.</p>";
+        return;
+      }
+
+      matchedProfiles.forEach(profile => {
+        const card = document.createElement("div");
+        card.className = "profile-card";
+        card.innerHTML = `
+          <img src="${profile.image}" alt="${profile.name}" />
+          <div class="info">
+            <h3><a href="${profile.profileUrl}" target="_blank" rel="noopener">${profile.name}</a></h3>
+            <button onclick="checkProfile('${profile.name}')">Run Aich Check</button>
+          </div>
+        `;
+        outputBox.appendChild(card);
+      });
+    }
+
+    function checkProfile(name) {
+      const outputBox = document.getElementById("outputBox");
+      outputBox.innerHTML = `
+        <div class="check-result">
+          <h3>🛑 Aich Check Result for "${name}"</h3>
+          <p>⚠️ This account shows signs of being <strong>FAKE or FRAUDULENT</strong>.</p>
+          <p>Please report it and do not send money or personal details.</p>
+          <button onclick="runCheck()">Back to Search</button>
+        </div>
+      `;
+    }
+
+    document.getElementById("searchBtn").addEventListener("click", runCheck);
+    document.getElementById("inputText").addEventListener("keydown", e => {
+      if (e.key === "Enter") runCheck();
+    });
+  </script>
+
 </body>
 </html>
