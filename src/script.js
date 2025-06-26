@@ -1,64 +1,34 @@
-const express = require('express');
-const puppeteer = require('puppeteer');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aich Check PNG - Live Facebook Search Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Aich Check 🇵🇬</h1>
+    <p>Type a username to search Facebook profiles:</p>
+    <input
+      type="text"
+      id="inputText"
+      placeholder="e.g. PNG_Gov_Aid_5050"
+      autocomplete="off"
+    />
+    <button id="searchBtn">Run Check</button>
+    <div id="outputBox"></div>
+  </div>
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+  <footer>
+    <h3>🛡️ Digital Safety Tips for PNG:</h3>
+    <ul>
+      <li>Fake accounts often promise free cash or jobs.</li>
+      <li>Check for typos, random numbers, or reused logos.</li>
+      <li>Never share personal info with unverified users.</li>
+    </ul>
+  </footer>
 
-app.get('/search', async (req, res) => {
-  const query = req.query.q;
-  if (!query) {
-    return res.status(400).json({ error: 'Missing query parameter q' });
-  }
-
-  try {
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    const page = await browser.newPage();
-
-    // Facebook search URL for people search
-    const searchUrl = `https://www.facebook.com/search/people/?q=${encodeURIComponent(query)}`;
-
-    await page.goto(searchUrl, { waitUntil: 'networkidle2' });
-
-    // Wait for search results container
-    await page.waitForSelector('[aria-label="Search Results"]', { timeout: 10000 });
-
-    // Extract profiles
-    const profiles = await page.evaluate(() => {
-      const profileNodes = Array.from(document.querySelectorAll('[aria-label="Search Results"] a[href*="facebook.com"]'));
-      const results = [];
-
-      for (let node of profileNodes) {
-        const href = node.href;
-        const name = node.querySelector('span')?.innerText || '';
-        const img = node.querySelector('img')?.src || null;
-        if (name && href) {
-          results.push({
-            name,
-            profileUrl: href,
-            image: img
-          });
-        }
-        if (results.length >= 5) break;
-      }
-      return results;
-    });
-
-    await browser.close();
-
-    if (!profiles.length) {
-      return res.json({ message: 'No profiles found' });
-    }
-
-    return res.json(profiles);
-
-  } catch (err) {
-    console.error('Error scraping Facebook:', err);
-    return res.status(500).json({ error: 'Failed to scrape Facebook' });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Facebook profile scraper API running on port ${PORT}`);
-});
+  <script src="script.js"></script>
+</body>
+</html>
