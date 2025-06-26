@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aich Check project for PNG",
   "scripts": {
-    "build": "echo \"Build script placeholder\""
+    "build": "mkdir -p dist && echo \"<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'/><title>Aich Check - PNG</title></head><body><h1>Welcome to Aich Check - PNG</h1><p>Site under construction. Stay tuned!</p></body></html>\" > dist/index.html"
   },
   "engines": {
     "node": ">=18 <19"
