@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Aich Check project for PNG",
   "scripts": {
-    "build": "node build.js"
-  },
+  "build": "mkdir -p dist && cp -r src/* dist/"
+}
   "engines": {
     "node": ">=18 <19"
   },
