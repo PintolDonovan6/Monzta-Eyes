@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Facebook Profile Finder</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; }
+    input, button { padding: 10px; font-size: 16px; }
+    button { margin-left: 10px; }
+    ul { padding: 0; list-style: none; }
+    li { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>🔎 Search Facebook Profiles</h2>
+  <input id="username" placeholder="Enter Facebook name" />
+  <button onclick="search()">Search</button>
+
+  <ul id="results"></ul>
+
+  <script>
+    async function search() {
+      const name = document.getElementById('username').value.trim();
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = "Loading...";
+
+      try {
+        const res = await fetch(`https://aichcheck-backend.onrender.com/search?username=${encodeURIComponent(name)}`);
+        const data = await res.json();
+
+        resultsEl.innerHTML = "";
+
+        if (data.error) {
+          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
+          return;
+        }
+        if (data.message) {
+          resultsEl.innerHTML = `<li>${data.message}</li>`;
+          return;
+        }
+
+        data.profiles.forEach(profile => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
+          resultsEl.appendChild(li);
+        });
+      } catch (e) {
+        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
+      }
+    }
+  </script>
+</body>
+</html>
