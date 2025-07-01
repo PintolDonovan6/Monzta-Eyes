@@ -1,143 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Monzta Eyes - Facebook Profile Finder</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #121212;
-      color: #eee;
-      padding: 40px;
-      max-width: 600px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #00d8ff;
-      text-shadow: 0 0 8px #00d8ff;
-    }
-    #username {
-      width: 75%;
-      padding: 12px;
-      font-size: 18px;
-      border: none;
-      border-radius: 6px;
-      outline: none;
-      box-shadow: 0 0 10px #00d8ff44;
-      background: #222;
-      color: #eee;
-      transition: box-shadow 0.3s ease;
-    }
-    #username:focus {
-      box-shadow: 0 0 15px #00d8ffaa;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 6px;
-      background: #00d8ff;
-      color: #121212;
-      cursor: pointer;
-      font-weight: bold;
-      margin-left: 10px;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background: #00b4d8;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 30px;
-    }
-    li {
-      padding: 14px 20px;
-      margin-bottom: 12px;
-      background: #222;
-      border-radius: 8px;
-      box-shadow: 0 0 5px #00d8ff66;
-      transition: background 0.3s ease;
-    }
-    li:hover {
-      background: #00d8ff22;
-    }
-    a {
-      color: #00d8ff;
-      text-decoration: none;
-      font-weight: 600;
-      word-break: break-word;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    #loading {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      color: #00d8ff;
-    }
-    #error {
-      color: #ff5555;
-      font-weight: bold;
-      margin-top: 20px;
-      text-align: center;
-    }
+    body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
+    input, button { padding: 10px; font-size: 16px; }
+    button { margin-left: 10px; cursor: pointer; }
+    ul { padding: 0; list-style: none; }
+    li { margin: 10px 0; }
+    #login-status { margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
-  <h1>Monzta Eyes 🔎</h1>
+  <h1>Monzta Eyes</h1>
 
-  <div style="text-align:center;">
-    <input id="username" placeholder="Type Facebook username here..." autocomplete="off" />
-    <button onclick="search()">Search</button>
-  </div>
+  <div id="login-status">🔐 Please log in with Facebook to use the search.</div>
 
-  <div id="loading" style="display:none;">Searching...</div>
-  <div id="error"></div>
+  <!-- Facebook Login Button -->
+  <fb:login-button 
+    scope="public_profile,email" 
+    onlogin="checkLoginState();">
+  </fb:login-button>
+
+  <hr>
+
+  <h2>🔎 Search Facebook Profiles</h2>
+  <input id="username" placeholder="Enter Facebook name" disabled />
+  <button onclick="search()" disabled id="search-btn">Search</button>
 
   <ul id="results"></ul>
 
+  <!-- Load Facebook SDK -->
   <script>
-    const backendUrl = 'https://monzta-eyes.onrender.com';
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '1068646731939406',
+        cookie     : true,
+        xfbml      : true,
+        version    : 'v16.0'
+      });
 
+      FB.getLoginStatus(function(response) {
+        statusChangeCallback(response);
+      });
+    };
+
+    (function(d, s, id){
+       var js, fjs = d.getElementsByTagName(s)[0];
+       if (d.getElementById(id)) return;
+       js = d.createElement(s); js.id = id;
+       js.src = "https://connect.facebook.net/en_US/sdk.js";
+       fjs.parentNode.insertBefore(js, fjs);
+     }(document, 'script', 'facebook-jssdk'));
+
+    // Called when login status changes
+    function statusChangeCallback(response) {
+      const loginStatus = document.getElementById('login-status');
+      const usernameInput = document.getElementById('username');
+      const searchBtn = document.getElementById('search-btn');
+
+      if (response.status === 'connected') {
+        loginStatus.innerHTML = '✅ Logged in! You can search now.';
+        usernameInput.disabled = false;
+        searchBtn.disabled = false;
+      } else {
+        loginStatus.innerHTML = '🔐 Please log in with Facebook to use the search.';
+        usernameInput.disabled = true;
+        searchBtn.disabled = true;
+      }
+    }
+
+    function checkLoginState() {
+      FB.getLoginStatus(function(response) {
+        statusChangeCallback(response);
+      });
+    }
+  </script>
+
+  <!-- Search logic -->
+  <script>
     async function search() {
-      const username = document.getElementById('username').value.trim();
+      const name = document.getElementById('username').value.trim();
       const resultsEl = document.getElementById('results');
-      const loadingEl = document.getElementById('loading');
-      const errorEl = document.getElementById('error');
+      resultsEl.innerHTML = "Loading...";
 
-      resultsEl.innerHTML = '';
-      errorEl.innerHTML = '';
-
-      if (!username) {
-        errorEl.textContent = '⚠️ Please enter a Facebook username to search.';
+      if (!name) {
+        resultsEl.innerHTML = '<li>Please enter a Facebook name.</li>';
         return;
       }
 
-      loadingEl.style.display = 'block';
-
       try {
-        const res = await fetch(`${backendUrl}/search?username=${encodeURIComponent(username)}`);
+        const res = await fetch(`https://aichcheck-backend.onrender.com/search?username=${encodeURIComponent(name)}`);
         const data = await res.json();
 
-        loadingEl.style.display = 'none';
+        resultsEl.innerHTML = "";
 
         if (data.error) {
-          errorEl.textContent = `❌ Error: ${data.error}`;
+          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
           return;
         }
         if (data.message) {
-          errorEl.textContent = `ℹ️ ${data.message}`;
-          return;
-        }
-
-        if (data.profiles.length === 0) {
-          errorEl.textContent = '😶 No profiles found.';
+          resultsEl.innerHTML = `<li>${data.message}</li>`;
           return;
         }
 
@@ -146,18 +110,10 @@
           li.innerHTML = `<a href="${profile.profileUrl}" target="_blank" rel="noopener noreferrer">${profile.name}</a>`;
           resultsEl.appendChild(li);
         });
-      } catch (err) {
-        loadingEl.style.display = 'none';
-        errorEl.textContent = '🔥 Something went wrong. Please try again.';
+      } catch (e) {
+        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
       }
     }
-
-    // Optional: trigger search on Enter key
-    document.getElementById('username').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        search();
-      }
-    });
   </script>
 
 </body>
