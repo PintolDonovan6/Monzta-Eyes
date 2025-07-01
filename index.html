@@ -1,120 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Monzta Eyes - Facebook Profile Finder</title>
+  <title>Facebook Profile Finder</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      padding: 40px;
-      max-width: 600px;
-      margin: auto;
-    }
-    h1 {
-      color: #1877f2;
-      text-align: center;
-    }
-    input, button {
-      padding: 12px;
-      font-size: 16px;
-    }
-    input {
-      width: 70%;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      outline: none;
-    }
-    button {
-      width: 25%;
-      margin-left: 5%;
-      background-color: #1877f2;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #165ecc;
-    }
-    ul {
-      list-style: none;
-      padding-left: 0;
-      margin-top: 30px;
-    }
-    li {
-      margin: 10px 0;
-      background: white;
-      padding: 12px;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    a {
-      color: #1877f2;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    #error {
-      color: red;
-      margin-top: 20px;
-      font-weight: bold;
-      text-align: center;
-    }
+    body { font-family: Arial, sans-serif; padding: 30px; }
+    input, button { padding: 10px; font-size: 16px; }
+    button { margin-left: 10px; }
+    ul { padding: 0; list-style: none; }
+    li { margin: 10px 0; }
   </style>
 </head>
 <body>
-  <h1>Monzta Eyes</h1>
-  <input type="text" id="username" placeholder="Enter Facebook username" />
+  <h2>🔎 Search Facebook Profiles</h2>
+  <input id="username" placeholder="Enter Facebook name" />
   <button onclick="search()">Search</button>
 
   <ul id="results"></ul>
-  <div id="error"></div>
 
   <script>
     async function search() {
-      const username = document.getElementById('username').value.trim();
+      const name = document.getElementById('username').value.trim();
       const resultsEl = document.getElementById('results');
-      const errorEl = document.getElementById('error');
+      resultsEl.innerHTML = "Loading...";
 
-      resultsEl.innerHTML = '';
-      errorEl.textContent = '';
-
-      if (!username) {
-        errorEl.textContent = 'Please enter a username.';
+      if (!name) {
+        resultsEl.innerHTML = "<li>Please enter a username.</li>";
         return;
       }
 
-      resultsEl.innerHTML = 'Loading...';
-
       try {
-        const response = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(username)}`);
-        const data = await response.json();
+        // Replace with your actual backend URL
+        const backendUrl = 'https://monzta-eyes.onrender.com'; 
+
+        const res = await fetch(`${backendUrl}/search?username=${encodeURIComponent(name)}`);
+        const data = await res.json();
+
+        resultsEl.innerHTML = "";
 
         if (data.error) {
-          resultsEl.innerHTML = '';
-          errorEl.textContent = `Error: ${data.error}`;
+          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
           return;
         }
-
         if (data.message) {
-          resultsEl.innerHTML = '';
-          errorEl.textContent = data.message;
+          resultsEl.innerHTML = `<li>${data.message}</li>`;
           return;
         }
 
-        resultsEl.innerHTML = '';
         data.profiles.forEach(profile => {
           const li = document.createElement('li');
-          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank" rel="noopener">${profile.name}</a>`;
+          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank" rel="noopener noreferrer">${profile.name}</a>`;
           resultsEl.appendChild(li);
         });
       } catch (e) {
-        resultsEl.innerHTML = '';
-        errorEl.textContent = '❌ Failed to fetch profiles.';
+        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
       }
     }
   </script>
