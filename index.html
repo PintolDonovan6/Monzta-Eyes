@@ -2,79 +2,109 @@
 <html>
 <head>
   <title>Monzta Eyes</title>
+  <meta charset="UTF-8" />
   <style>
     body {
       font-family: sans-serif;
+      background-color: #f0f0f0;
+      color: #222;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 50px;
-      background-color: #f0f0f0;
+      padding: 40px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .dark {
+      background-color: #111;
+      color: #eee;
     }
     h1 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
-    input {
+    input, button {
       padding: 10px;
       font-size: 16px;
-      width: 300px;
+      margin: 10px 5px;
       border-radius: 5px;
+    }
+    input {
+      width: 300px;
       border: 1px solid #ccc;
     }
     button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 10px;
       cursor: pointer;
       background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 5px;
     }
     ul {
       list-style: none;
       padding-left: 0;
-      margin-top: 30px;
       width: 100%;
       max-width: 500px;
+      margin-top: 20px;
     }
     li {
       background: white;
-      padding: 15px;
-      margin-bottom: 10px;
+      color: #000;
+      padding: 12px;
+      margin: 8px 0;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    a {
-      text-decoration: none;
-      color: #333;
+    .dark li {
+      background: #333;
+      color: #fff;
+    }
+    .toggle-btn {
+      background-color: #444;
+      color: #fff;
+    }
+    .dark .toggle-btn {
+      background-color: #eee;
+      color: #000;
     }
   </style>
 </head>
 <body>
 
   <h1>🔍 Monzta Eyes</h1>
-  <input id="username" placeholder="Search Facebook name..." />
-  <button onclick="search()">Search</button>
+  <input id="username" placeholder="Type Facebook name..." />
+  <div>
+    <button onclick="downloadResults()">📥 Download</button>
+    <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+  </div>
 
   <ul id="results"></ul>
 
   <script>
-    async function search() {
-      const name = document.getElementById('username').value.trim();
-      const resultsEl = document.getElementById('results');
-      resultsEl.innerHTML = "<li>Searching...</li>";
+    let resultsList = [];
 
+    const resultsEl = document.getElementById('results');
+    const inputEl = document.getElementById('username');
+    let typingTimer;
+
+    inputEl.addEventListener('input', () => {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(search, 1000); // 1 second delay
+    });
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    async function search() {
+      const name = inputEl.value.trim();
       if (!name) {
-        resultsEl.innerHTML = "<li>❗ Please enter a name to search.</li>";
+        resultsEl.innerHTML = "<li>❗ Please enter a name.</li>";
         return;
       }
+
+      resultsEl.innerHTML = "<li>Searching...</li>";
 
       try {
         const res = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(name)}`);
         const data = await res.json();
-
-        resultsEl.innerHTML = "";
+        resultsList = [];
 
         if (data.error) {
           resultsEl.innerHTML = `<li>❌ Error: ${data.error}</li>`;
@@ -86,7 +116,9 @@
           return;
         }
 
+        resultsEl.innerHTML = "";
         data.profiles.forEach(profile => {
+          resultsList.push(`${profile.name} - ${profile.profileUrl}`);
           const li = document.createElement('li');
           li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
           resultsEl.appendChild(li);
@@ -94,6 +126,19 @@
       } catch (err) {
         resultsEl.innerHTML = "<li>❌ Failed to connect to Monzta Eyes.</li>";
       }
+    }
+
+    function downloadResults() {
+      if (!resultsList.length) {
+        alert("No results to download.");
+        return;
+      }
+
+      const blob = new Blob([resultsList.join("\n")], { type: 'text/plain' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "monzta_eyes_results.txt";
+      link.click();
     }
   </script>
 
