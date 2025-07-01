@@ -16,8 +16,8 @@ app.get('/search', async (req, res) => {
     const searchUrl = `https://www.facebook.com/public/${encodeURIComponent(username)}`;
     const { data } = await axios.get(searchUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0'
-      }
+        'User-Agent': 'Mozilla/5.0',
+      },
     });
 
     const $ = cheerio.load(data);
@@ -26,7 +26,7 @@ app.get('/search', async (req, res) => {
     $('a[href^="https://www.facebook.com/"]').each((i, el) => {
       const name = $(el).text();
       const profileUrl = $(el).attr('href');
-      if (name && profileUrl && profileUrl.includes('/people/')) {
+      if (name && profileUrl && profileUrl.startsWith('https://www.facebook.com/')) {
         results.push({ name, profileUrl });
       }
     });
@@ -35,7 +35,7 @@ app.get('/search', async (req, res) => {
       return res.json({ message: "❗ No profiles found matching that username." });
     }
 
-    res.json({ profiles: results.slice(0, 5) }); // Return top 5
+    res.json({ profiles: results.slice(0, 5) });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch Facebook profiles" });
   }
