@@ -1,68 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Facebook Login Test</title>
+  <meta charset="UTF-8" />
+  <title>Facebook Profile Finder - Monzta Eyes</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 30px; }
     input, button { padding: 10px; font-size: 16px; }
     button { margin-left: 10px; }
     ul { padding: 0; list-style: none; }
     li { margin: 10px 0; }
+    #login-btn { margin-bottom: 20px; }
   </style>
 </head>
 <body>
+  <h1>🔐 Facebook Login & 🔎 Profile Search</h1>
 
-  <h2>🔐 Log in with Facebook</h2>
-  <div id="fb-root"></div>
-  <fb:login-button 
-    scope="public_profile,email"
-    onlogin="checkLoginState();">
-  </fb:login-button>
+  <!-- Facebook Login button -->
+  <button id="login-btn" onclick="fbLogin()">Log in with Facebook</button>
+  <div id="login-status"></div>
 
-  <p id="status"></p>
-
-  <h2>🔎 Search Facebook Profiles</h2>
+  <h2>Search Facebook Profiles</h2>
   <input id="username" placeholder="Enter Facebook name" />
-  <button onclick="search()">Search</button>
+  <button onclick="search()" id="search-btn" disabled>Search</button>
 
   <ul id="results"></ul>
 
+  <!-- Load Facebook SDK -->
+  <div id="fb-root"></div>
   <script>
+    // Initialize Facebook SDK
     window.fbAsyncInit = function() {
       FB.init({
-        appId      : '1068646731939406',
+        appId      : '1068646731939406',  // Your actual Facebook App ID
         cookie     : true,
-        xfbml      : true,
-        version    : 'v18.0'
+        xfbml      : false,
+        version    : 'v18.0' // or latest version
       });
-      FB.AppEvents.logPageView(); 
+
+      // Check initial login status
+      FB.getLoginStatus(function(response) {
+        statusChangeCallback(response);
+      });
     };
 
     (function(d, s, id){
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s); js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
+       var js, fjs = d.getElementsByTagName(s)[0];
+       if (d.getElementById(id)) {return;}
+       js = d.createElement(s); js.id = id;
+       js.src = "https://connect.facebook.net/en_US/sdk.js";
+       fjs.parentNode.insertBefore(js, fjs);
+     }(document, 'script', 'facebook-jssdk'));
 
-    function checkLoginState() {
-      FB.getLoginStatus(function(response) {
-        if (response.status === 'connected') {
-          document.getElementById('status').innerText = '✅ Logged in!';
-        } else {
-          document.getElementById('status').innerText = '❌ Not logged in';
-        }
-      });
+    // Called when login status changes
+    function statusChangeCallback(response) {
+      const loginBtn = document.getElementById('login-btn');
+      const statusDiv = document.getElementById('login-status');
+      const searchBtn = document.getElementById('search-btn');
+
+      if (response.status === 'connected') {
+        loginBtn.style.display = 'none';
+        statusDiv.innerHTML = `<b>Logged in! You can now search Facebook profiles.</b>`;
+        searchBtn.disabled = false;
+      } else {
+        loginBtn.style.display = 'inline-block';
+        statusDiv.innerHTML = `<b>Please log in with Facebook first.</b>`;
+        searchBtn.disabled = true;
+      }
     }
 
+    // Trigger Facebook Login dialog
+    function fbLogin() {
+      FB.login(function(response) {
+        statusChangeCallback(response);
+      }, {scope: 'public_profile,email'});
+    }
+
+    // Search function calling your backend
     async function search() {
       const name = document.getElementById('username').value.trim();
       const resultsEl = document.getElementById('results');
       resultsEl.innerHTML = "Loading...";
 
+      if (!name) {
+        resultsEl.innerHTML = "<li>Please enter a name.</li>";
+        return;
+      }
+
       try {
-        const res = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(name)}`);
+        const res = await fetch(`https://aichcheck-backend.onrender.com/search?username=${encodeURIComponent(name)}`);
         const data = await res.json();
 
         resultsEl.innerHTML = "";
@@ -78,7 +103,7 @@
 
         data.profiles.forEach(profile => {
           const li = document.createElement('li');
-          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
+          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank" rel="noopener">${profile.name}</a>`;
           resultsEl.appendChild(li);
         });
       } catch (e) {
@@ -86,6 +111,5 @@
       }
     }
   </script>
-
 </body>
 </html>
