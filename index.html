@@ -1,101 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook Profile Finder</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    input, button { padding: 10px; font-size: 16px; }
-    button { margin-left: 10px; }
-    ul { padding: 0; list-style: none; }
-    li { margin: 10px 0; }
-  </style>
+  <title>Facebook Login Test</title>
 </head>
 <body>
 
 <h2>🔐 Log in with Facebook</h2>
-<div class="fb-login-button"
-     data-width=""
-     data-size="large"
-     data-button-type="continue_with"
-     data-layout="default"
-     data-auto-logout-link="true"
-     data-use-continue-as="true"
-     data-scope="public_profile"
-     onlogin="checkLoginState();"></div>
 
-<h2>🔎 Search Facebook Profiles</h2>
-<input id="username" placeholder="Enter name" />
-<button onclick="search()">Search</button>
+<!-- Facebook Login Button -->
+<fb:login-button 
+  scope="public_profile,email"
+  onlogin="checkLoginState();">
+</fb:login-button>
 
-<ul id="results"></ul>
-
-<script>
-  let accessToken = null;
-
-  function checkLoginState() {
-    FB.getLoginStatus(function(response) {
-      if (response.status === 'connected') {
-        accessToken = response.authResponse.accessToken;
-        alert("✅ Logged in!");
-      } else {
-        alert("❗ Please log in to Facebook.");
-      }
-    });
-  }
-
-  async function search() {
-    const name = document.getElementById('username').value.trim();
-    const resultsEl = document.getElementById('results');
-    resultsEl.innerHTML = "Loading...";
-
-    if (!accessToken) {
-      resultsEl.innerHTML = "<li>❗ Please log in first.</li>";
-      return;
-    }
-
-    try {
-      const res = await fetch(`https://graph.facebook.com/v19.0/search?type=user&q=${encodeURIComponent(name)}&access_token=${accessToken}`);
-      const data = await res.json();
-
-      resultsEl.innerHTML = "";
-
-      if (data.error) {
-        resultsEl.innerHTML = `<li>Error: ${data.error.message}</li>`;
-        return;
-      }
-
-      if (!data.data || data.data.length === 0) {
-        resultsEl.innerHTML = `<li>No profiles found.</li>`;
-        return;
-      }
-
-      data.data.forEach(profile => {
-        const li = document.createElement('li');
-        li.innerHTML = `<b>${profile.name}</b> — ID: ${profile.id}`;
-        resultsEl.appendChild(li);
-      });
-    } catch (e) {
-      resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
-    }
-  }
-</script>
+<div id="status"></div>
 
 <!-- Facebook SDK -->
-<script async defer crossorigin="anonymous"
-  src="https://connect.facebook.net/en_US/sdk.js">
-</script>
-
 <script>
   window.fbAsyncInit = function() {
     FB.init({
-      appId      : '1068646731939406', // 👈 Your App ID
+      appId      : '1068646731939406',  // ✅ your real app ID
       cookie     : true,
       xfbml      : true,
-      version    : 'v19.0' // or latest
+      version    : 'v19.0'
     });
 
-    FB.AppEvents.logPageView();
+    FB.getLoginStatus(function(response) {
+      statusChangeCallback(response);
+    });
   };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) return;
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+
+  function statusChangeCallback(response) {
+    if (response.status === 'connected') {
+      FB.api('/me', function(user) {
+        document.getElementById('status').innerHTML = `✅ Logged in as: ${user.name}`;
+      });
+    } else {
+      document.getElementById('status').innerHTML = '❌ Not logged in';
+    }
+  }
+
+  function checkLoginState() {
+    FB.getLoginStatus(function(response) {
+      statusChangeCallback(response);
+    });
+  }
 </script>
 
 </body>
