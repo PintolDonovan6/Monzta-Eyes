@@ -1,77 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Monzta Eyes - Facebook Profile Finder</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    input, button { padding: 10px; font-size: 16px; }
-    button { margin-left: 10px; }
-    ul { padding: 0; list-style: none; }
-    li { margin: 10px 0; }
-  </style>
-</head>
-<body>
-  <h2>🔒 Enter Secret Token to Unlock Search</h2>
-  <input id="token" placeholder="Enter your secret token" />
-  <button onclick="unlock()">Unlock</button>
+const express = require('express');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const cors = require('cors');
 
-  <div id="searchSection" style="display:none;">
-    <h2>🔎 Search Facebook Profiles</h2>
-    <input id="username" placeholder="Enter Facebook name" />
-    <button onclick="search()">Search</button>
-    <ul id="results"></ul>
-  </div>
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-  <script>
-    let userToken = '';
+app.use(cors());
 
-    function unlock() {
-      const inputToken = document.getElementById('token').value.trim();
-      if (!inputToken) {
-        alert('Enter your secret token');
-        return;
+app.get('/search', async (req, res) => {
+  const username = req.query.username;
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+
+  try {
+    const searchUrl = `https://www.facebook.com/public/${encodeURIComponent(username)}`;
+    const { data } = await axios.get(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+      },
+    });
+
+    const $ = cheerio.load(data);
+    const results = [];
+
+    $('a[href^="https://www.facebook.com/"]').each((i, el) => {
+      const name = $(el).text().trim();
+      const profileUrl = $(el).attr('href');
+      if (name && profileUrl && profileUrl.startsWith('https://www.facebook.com/')) {
+        results.push({ name, profileUrl });
       }
-      userToken = inputToken;
-      document.getElementById('token').style.display = 'none';
-      event.target.style.display = 'none';
-      document.getElementById('searchSection').style.display = 'block';
-      alert('Access granted');
+    });
+
+    if (results.length === 0) {
+      return res.json({ message: "❗ No profiles found matching that username." });
     }
 
-    async function search() {
-      const name = document.getElementById('username').value.trim();
-      const resultsEl = document.getElementById('results');
-      resultsEl.innerHTML = "Loading...";
+    res.json({ profiles: results.slice(0, 5) }); // Return up to 5 profiles
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch Facebook profiles" });
+  }
+});
 
-      if (!name) {
-        resultsEl.innerHTML = '<li>Please enter a Facebook name</li>';
-        return;
-      }
+app.get('/', (req, res) => {
+  res.send("✅ API is live. Use /search?username=NAME to fetch profiles.");
+});
 
-      try {
-        const res = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(name)}&token=${encodeURIComponent(userToken)}`);
-        const data = await res.json();
-
-        resultsEl.innerHTML = "";
-
-        if (data.error) {
-          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
-          return;
-        }
-        if (data.message) {
-          resultsEl.innerHTML = `<li>${data.message}</li>`;
-          return;
-        }
-
-        data.profiles.forEach(profile => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
-          resultsEl.appendChild(li);
-        });
-      } catch (e) {
-        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
-      }
-    }
-  </script>
-</body>
-</html>
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
