@@ -2,58 +2,90 @@
 <html>
 <head>
   <title>Facebook Login Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; }
+    input, button { padding: 10px; font-size: 16px; }
+    button { margin-left: 10px; }
+    ul { padding: 0; list-style: none; }
+    li { margin: 10px 0; }
+  </style>
 </head>
 <body>
 
-<h2>🔐 Log in with Facebook</h2>
+  <h2>🔐 Log in with Facebook</h2>
+  <div id="fb-root"></div>
+  <fb:login-button 
+    scope="public_profile,email"
+    onlogin="checkLoginState();">
+  </fb:login-button>
 
-<!-- Facebook Login Button -->
-<fb:login-button 
-  scope="public_profile,email"
-  onlogin="checkLoginState();">
-</fb:login-button>
+  <p id="status"></p>
 
-<div id="status"></div>
+  <h2>🔎 Search Facebook Profiles</h2>
+  <input id="username" placeholder="Enter Facebook name" />
+  <button onclick="search()">Search</button>
 
-<!-- Facebook SDK -->
-<script>
-  window.fbAsyncInit = function() {
-    FB.init({
-      appId      : '1068646731939406',  // ✅ your real app ID
-      cookie     : true,
-      xfbml      : true,
-      version    : 'v19.0'
-    });
+  <ul id="results"></ul>
 
-    FB.getLoginStatus(function(response) {
-      statusChangeCallback(response);
-    });
-  };
-
-  (function(d, s, id){
-     var js, fjs = d.getElementsByTagName(s)[0];
-     if (d.getElementById(id)) return;
-     js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/en_US/sdk.js";
-     fjs.parentNode.insertBefore(js, fjs);
-   }(document, 'script', 'facebook-jssdk'));
-
-  function statusChangeCallback(response) {
-    if (response.status === 'connected') {
-      FB.api('/me', function(user) {
-        document.getElementById('status').innerHTML = `✅ Logged in as: ${user.name}`;
+  <script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '1068646731939406',
+        cookie     : true,
+        xfbml      : true,
+        version    : 'v18.0'
       });
-    } else {
-      document.getElementById('status').innerHTML = '❌ Not logged in';
-    }
-  }
+      FB.AppEvents.logPageView(); 
+    };
 
-  function checkLoginState() {
-    FB.getLoginStatus(function(response) {
-      statusChangeCallback(response);
-    });
-  }
-</script>
+    (function(d, s, id){
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    function checkLoginState() {
+      FB.getLoginStatus(function(response) {
+        if (response.status === 'connected') {
+          document.getElementById('status').innerText = '✅ Logged in!';
+        } else {
+          document.getElementById('status').innerText = '❌ Not logged in';
+        }
+      });
+    }
+
+    async function search() {
+      const name = document.getElementById('username').value.trim();
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = "Loading...";
+
+      try {
+        const res = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(name)}`);
+        const data = await res.json();
+
+        resultsEl.innerHTML = "";
+
+        if (data.error) {
+          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
+          return;
+        }
+        if (data.message) {
+          resultsEl.innerHTML = `<li>${data.message}</li>`;
+          return;
+        }
+
+        data.profiles.forEach(profile => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
+          resultsEl.appendChild(li);
+        });
+      } catch (e) {
+        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
+      }
+    }
+  </script>
 
 </body>
 </html>
