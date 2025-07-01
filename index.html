@@ -1,23 +1,91 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook Profile Finder</title>
+  <title>Facebook Profile Finder + Facebook Login</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 30px; }
     input, button { padding: 10px; font-size: 16px; }
     button { margin-left: 10px; }
     ul { padding: 0; list-style: none; }
     li { margin: 10px 0; }
+    #profile { margin-top: 30px; }
   </style>
+
+  <script>
+    // Facebook SDK init
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '1068646731939406', // Your Facebook App ID
+        cookie     : true,
+        xfbml      : true,
+        version    : 'v17.0' // latest API version
+      });
+      FB.AppEvents.logPageView();
+      
+      // Check login status when SDK loads
+      FB.getLoginStatus(function(response) {
+        statusChangeCallback(response);
+      });
+    };
+
+    // Load Facebook SDK asynchronously
+    (function(d, s, id){
+       var js, fjs = d.getElementsByTagName(s)[0];
+       if (d.getElementById(id)) {return;}
+       js = d.createElement(s); js.id = id;
+       js.src = "https://connect.facebook.net/en_US/sdk.js";
+       fjs.parentNode.insertBefore(js, fjs);
+     }(document, 'script', 'facebook-jssdk'));
+
+    // Handle status change
+    function statusChangeCallback(response) {
+      if (response.status === 'connected') {
+        fetchProfile();
+      } else {
+        document.getElementById('profile').innerHTML = 'Please log in with Facebook.';
+      }
+    }
+
+    // Trigger FB login
+    function fbLogin() {
+      FB.login(function(response) {
+        if (response.authResponse) {
+          fetchProfile();
+        } else {
+          alert('User cancelled login or did not authorize.');
+        }
+      }, {scope: 'public_profile,email'});
+    }
+
+    // Fetch and show FB profile info
+    function fetchProfile() {
+      FB.api('/me', {fields: 'name,email,picture'}, function(response) {
+        const profileDiv = document.getElementById('profile');
+        profileDiv.innerHTML = `
+          <h3>Welcome, ${response.name}!</h3>
+          <p>Email: ${response.email || 'Not provided'}</p>
+          <img src="${response.picture.data.url}" alt="Profile Picture" />
+        `;
+      });
+    }
+  </script>
 </head>
 <body>
+
   <h2>🔎 Search Facebook Profiles</h2>
   <input id="username" placeholder="Enter Facebook name" />
   <button onclick="search()">Search</button>
 
   <ul id="results"></ul>
 
+  <hr>
+
+  <h2>Facebook Login</h2>
+  <button onclick="fbLogin()">Login with Facebook</button>
+  <div id="profile">Please log in with Facebook.</div>
+
   <script>
+    // Your existing search function
     async function search() {
       const name = document.getElementById('username').value.trim();
       const resultsEl = document.getElementById('results');
@@ -48,5 +116,6 @@
       }
     }
   </script>
+
 </body>
 </html>
