@@ -4,36 +4,32 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
 app.get('/search', async (req, res) => {
   const username = req.query.username;
-  if (!username) return res.status(400).json({ error: 'Missing username' });
+  if (!username) {
+    return res.status(400).json({ error: 'Missing username' });
+  }
 
   try {
     const searchUrl = `https://www.facebook.com/public/${encodeURIComponent(username)}`;
     const { data } = await axios.get(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+      },
     });
 
     const $ = cheerio.load(data);
     const results = [];
 
     $('a[href^="https://www.facebook.com/"]').each((i, el) => {
-      const name = $(el).text().trim();
-      const profileUrl = $(el).attr('href').split('?')[0]; // clean URL
-
-      // Filter out ads and unwanted URLs
-      if (
-        name &&
-        profileUrl &&
-        profileUrl.startsWith('https://www.facebook.com/') &&
-        !profileUrl.includes('profile.php') &&
-        !profileUrl.includes('login') &&
-        !profileUrl.includes('privacy')
-      ) {
+      const name = $(el).text();
+      const profileUrl = $(el).attr('href');
+      // Only include relevant profile links (adjust if needed)
+      if (name && profileUrl && profileUrl.startsWith('https://www.facebook.com/')) {
         results.push({ name, profileUrl });
       }
     });
@@ -43,13 +39,13 @@ app.get('/search', async (req, res) => {
     }
 
     res.json({ profiles: results.slice(0, 5) }); // return top 5 results
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ error: "Failed to fetch Facebook profiles" });
   }
 });
 
 app.get('/', (req, res) => {
-  res.send("✅ API is live. Use /search?username=NAME");
+  res.send('✅ API is live. Use /search?username=NAME');
 });
 
 app.listen(PORT, () => {
