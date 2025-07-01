@@ -1,146 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Monzta Eyes</title>
   <meta charset="UTF-8" />
+  <title>Monzta Eyes - Facebook Profile Finder</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #f0f0f0;
-      color: #222;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
       padding: 40px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .dark {
-      background-color: #111;
-      color: #eee;
+      max-width: 600px;
+      margin: auto;
     }
     h1 {
-      margin-bottom: 10px;
+      color: #1877f2;
+      text-align: center;
     }
     input, button {
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
-      margin: 10px 5px;
-      border-radius: 5px;
     }
     input {
-      width: 300px;
+      width: 70%;
       border: 1px solid #ccc;
+      border-radius: 5px;
+      outline: none;
     }
     button {
-      cursor: pointer;
-      background-color: #007bff;
+      width: 25%;
+      margin-left: 5%;
+      background-color: #1877f2;
       color: white;
       border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #165ecc;
     }
     ul {
       list-style: none;
       padding-left: 0;
-      width: 100%;
-      max-width: 500px;
-      margin-top: 20px;
+      margin-top: 30px;
     }
     li {
+      margin: 10px 0;
       background: white;
-      color: #000;
       padding: 12px;
-      margin: 8px 0;
-      border-radius: 8px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .dark li {
-      background: #333;
-      color: #fff;
+    a {
+      color: #1877f2;
+      text-decoration: none;
+      font-weight: bold;
     }
-    .toggle-btn {
-      background-color: #444;
-      color: #fff;
+    a:hover {
+      text-decoration: underline;
     }
-    .dark .toggle-btn {
-      background-color: #eee;
-      color: #000;
+    #error {
+      color: red;
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-
-  <h1>🔍 Monzta Eyes</h1>
-  <input id="username" placeholder="Type Facebook name..." />
-  <div>
-    <button onclick="downloadResults()">📥 Download</button>
-    <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
-  </div>
+  <h1>Monzta Eyes</h1>
+  <input type="text" id="username" placeholder="Enter Facebook username" />
+  <button onclick="search()">Search</button>
 
   <ul id="results"></ul>
+  <div id="error"></div>
 
   <script>
-    let resultsList = [];
-
-    const resultsEl = document.getElementById('results');
-    const inputEl = document.getElementById('username');
-    let typingTimer;
-
-    inputEl.addEventListener('input', () => {
-      clearTimeout(typingTimer);
-      typingTimer = setTimeout(search, 1000); // 1 second delay
-    });
-
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-    }
-
     async function search() {
-      const name = inputEl.value.trim();
-      if (!name) {
-        resultsEl.innerHTML = "<li>❗ Please enter a name.</li>";
+      const username = document.getElementById('username').value.trim();
+      const resultsEl = document.getElementById('results');
+      const errorEl = document.getElementById('error');
+
+      resultsEl.innerHTML = '';
+      errorEl.textContent = '';
+
+      if (!username) {
+        errorEl.textContent = 'Please enter a username.';
         return;
       }
 
-      resultsEl.innerHTML = "<li>Searching...</li>";
+      resultsEl.innerHTML = 'Loading...';
 
       try {
-        const res = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(name)}`);
-        const data = await res.json();
-        resultsList = [];
+        const response = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(username)}`);
+        const data = await response.json();
 
         if (data.error) {
-          resultsEl.innerHTML = `<li>❌ Error: ${data.error}</li>`;
+          resultsEl.innerHTML = '';
+          errorEl.textContent = `Error: ${data.error}`;
           return;
         }
 
         if (data.message) {
-          resultsEl.innerHTML = `<li>${data.message}</li>`;
+          resultsEl.innerHTML = '';
+          errorEl.textContent = data.message;
           return;
         }
 
-        resultsEl.innerHTML = "";
+        resultsEl.innerHTML = '';
         data.profiles.forEach(profile => {
-          resultsList.push(`${profile.name} - ${profile.profileUrl}`);
           const li = document.createElement('li');
-          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
+          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank" rel="noopener">${profile.name}</a>`;
           resultsEl.appendChild(li);
         });
-      } catch (err) {
-        resultsEl.innerHTML = "<li>❌ Failed to connect to Monzta Eyes.</li>";
+      } catch (e) {
+        resultsEl.innerHTML = '';
+        errorEl.textContent = '❌ Failed to fetch profiles.';
       }
-    }
-
-    function downloadResults() {
-      if (!resultsList.length) {
-        alert("No results to download.");
-        return;
-      }
-
-      const blob = new Blob([resultsList.join("\n")], { type: 'text/plain' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "monzta_eyes_results.txt";
-      link.click();
     }
   </script>
-
 </body>
 </html>
