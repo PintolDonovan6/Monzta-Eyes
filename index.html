@@ -1,121 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook Profile Finder + Facebook Login</title>
+  <title>Facebook Profile Finder</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 30px; }
     input, button { padding: 10px; font-size: 16px; }
     button { margin-left: 10px; }
     ul { padding: 0; list-style: none; }
     li { margin: 10px 0; }
-    #profile { margin-top: 30px; }
   </style>
-
-  <script>
-    // Facebook SDK init
-    window.fbAsyncInit = function() {
-      FB.init({
-        appId      : '1068646731939406', // Your Facebook App ID
-        cookie     : true,
-        xfbml      : true,
-        version    : 'v17.0' // latest API version
-      });
-      FB.AppEvents.logPageView();
-      
-      // Check login status when SDK loads
-      FB.getLoginStatus(function(response) {
-        statusChangeCallback(response);
-      });
-    };
-
-    // Load Facebook SDK asynchronously
-    (function(d, s, id){
-       var js, fjs = d.getElementsByTagName(s)[0];
-       if (d.getElementById(id)) {return;}
-       js = d.createElement(s); js.id = id;
-       js.src = "https://connect.facebook.net/en_US/sdk.js";
-       fjs.parentNode.insertBefore(js, fjs);
-     }(document, 'script', 'facebook-jssdk'));
-
-    // Handle status change
-    function statusChangeCallback(response) {
-      if (response.status === 'connected') {
-        fetchProfile();
-      } else {
-        document.getElementById('profile').innerHTML = 'Please log in with Facebook.';
-      }
-    }
-
-    // Trigger FB login
-    function fbLogin() {
-      FB.login(function(response) {
-        if (response.authResponse) {
-          fetchProfile();
-        } else {
-          alert('User cancelled login or did not authorize.');
-        }
-      }, {scope: 'public_profile,email'});
-    }
-
-    // Fetch and show FB profile info
-    function fetchProfile() {
-      FB.api('/me', {fields: 'name,email,picture'}, function(response) {
-        const profileDiv = document.getElementById('profile');
-        profileDiv.innerHTML = `
-          <h3>Welcome, ${response.name}!</h3>
-          <p>Email: ${response.email || 'Not provided'}</p>
-          <img src="${response.picture.data.url}" alt="Profile Picture" />
-        `;
-      });
-    }
-  </script>
 </head>
 <body>
 
-  <h2>🔎 Search Facebook Profiles</h2>
-  <input id="username" placeholder="Enter Facebook name" />
-  <button onclick="search()">Search</button>
+<h2>🔐 Log in with Facebook</h2>
+<div class="fb-login-button"
+     data-width=""
+     data-size="large"
+     data-button-type="continue_with"
+     data-layout="default"
+     data-auto-logout-link="true"
+     data-use-continue-as="true"
+     data-scope="public_profile"
+     onlogin="checkLoginState();"></div>
 
-  <ul id="results"></ul>
+<h2>🔎 Search Facebook Profiles</h2>
+<input id="username" placeholder="Enter name" />
+<button onclick="search()">Search</button>
 
-  <hr>
+<ul id="results"></ul>
 
-  <h2>Facebook Login</h2>
-  <button onclick="fbLogin()">Login with Facebook</button>
-  <div id="profile">Please log in with Facebook.</div>
+<script>
+  let accessToken = null;
 
-  <script>
-    // Your existing search function
-    async function search() {
-      const name = document.getElementById('username').value.trim();
-      const resultsEl = document.getElementById('results');
-      resultsEl.innerHTML = "Loading...";
-
-      try {
-        const res = await fetch(`https://aichcheck-backend.onrender.com/search?username=${encodeURIComponent(name)}`);
-        const data = await res.json();
-
-        resultsEl.innerHTML = "";
-
-        if (data.error) {
-          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
-          return;
-        }
-        if (data.message) {
-          resultsEl.innerHTML = `<li>${data.message}</li>`;
-          return;
-        }
-
-        data.profiles.forEach(profile => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
-          resultsEl.appendChild(li);
-        });
-      } catch (e) {
-        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
+  function checkLoginState() {
+    FB.getLoginStatus(function(response) {
+      if (response.status === 'connected') {
+        accessToken = response.authResponse.accessToken;
+        alert("✅ Logged in!");
+      } else {
+        alert("❗ Please log in to Facebook.");
       }
+    });
+  }
+
+  async function search() {
+    const name = document.getElementById('username').value.trim();
+    const resultsEl = document.getElementById('results');
+    resultsEl.innerHTML = "Loading...";
+
+    if (!accessToken) {
+      resultsEl.innerHTML = "<li>❗ Please log in first.</li>";
+      return;
     }
-  </script>
+
+    try {
+      const res = await fetch(`https://graph.facebook.com/v19.0/search?type=user&q=${encodeURIComponent(name)}&access_token=${accessToken}`);
+      const data = await res.json();
+
+      resultsEl.innerHTML = "";
+
+      if (data.error) {
+        resultsEl.innerHTML = `<li>Error: ${data.error.message}</li>`;
+        return;
+      }
+
+      if (!data.data || data.data.length === 0) {
+        resultsEl.innerHTML = `<li>No profiles found.</li>`;
+        return;
+      }
+
+      data.data.forEach(profile => {
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${profile.name}</b> — ID: ${profile.id}`;
+        resultsEl.appendChild(li);
+      });
+    } catch (e) {
+      resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
+    }
+  }
+</script>
+
+<!-- Facebook SDK -->
+<script async defer crossorigin="anonymous"
+  src="https://connect.facebook.net/en_US/sdk.js">
+</script>
+
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '1068646731939406', // 👈 Your App ID
+      cookie     : true,
+      xfbml      : true,
+      version    : 'v19.0' // or latest
+    });
+
+    FB.AppEvents.logPageView();
+  };
+</script>
 
 </body>
 </html>
