@@ -15,9 +15,7 @@ app.get('/search', async (req, res) => {
   try {
     const searchUrl = `https://www.facebook.com/public/${encodeURIComponent(username)}`;
     const { data } = await axios.get(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
+      headers: { 'User-Agent': 'Mozilla/5.0' },
     });
 
     const $ = cheerio.load(data);
@@ -25,8 +23,17 @@ app.get('/search', async (req, res) => {
 
     $('a[href^="https://www.facebook.com/"]').each((i, el) => {
       const name = $(el).text().trim();
-      const profileUrl = $(el).attr('href');
-      if (name && profileUrl && profileUrl.startsWith('https://www.facebook.com/')) {
+      const profileUrl = $(el).attr('href').split('?')[0]; // clean URL
+
+      // Filter out ads and unwanted URLs
+      if (
+        name &&
+        profileUrl &&
+        profileUrl.startsWith('https://www.facebook.com/') &&
+        !profileUrl.includes('profile.php') &&
+        !profileUrl.includes('login') &&
+        !profileUrl.includes('privacy')
+      ) {
         results.push({ name, profileUrl });
       }
     });
@@ -35,14 +42,14 @@ app.get('/search', async (req, res) => {
       return res.json({ message: "❗ No profiles found matching that username." });
     }
 
-    res.json({ profiles: results.slice(0, 5) }); // Return up to 5 profiles
-  } catch (err) {
+    res.json({ profiles: results.slice(0, 5) }); // return top 5 results
+  } catch (error) {
     res.status(500).json({ error: "Failed to fetch Facebook profiles" });
   }
 });
 
 app.get('/', (req, res) => {
-  res.send("✅ API is live. Use /search?username=NAME to fetch profiles.");
+  res.send("✅ API is live. Use /search?username=NAME");
 });
 
 app.listen(PORT, () => {
