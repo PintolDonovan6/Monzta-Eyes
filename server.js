@@ -2,19 +2,12 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 
-// Serve the index.html file at the root URL
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Your existing /search API route
 app.get('/search', async (req, res) => {
   const username = req.query.username;
   if (!username) return res.status(400).json({ error: 'Missing username' });
@@ -31,7 +24,7 @@ app.get('/search', async (req, res) => {
     const results = [];
 
     $('a[href^="https://www.facebook.com/"]').each((i, el) => {
-      const name = $(el).text();
+      const name = $(el).text().trim();
       const profileUrl = $(el).attr('href');
       if (name && profileUrl && profileUrl.startsWith('https://www.facebook.com/')) {
         results.push({ name, profileUrl });
@@ -48,7 +41,10 @@ app.get('/search', async (req, res) => {
   }
 });
 
-// Start server
+app.get('/', (req, res) => {
+  res.send("✅ API is live. Use /search?username=NAME to fetch profiles.");
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
