@@ -1,48 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Facebook Profile Finder</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monzta Eyes - Facebook Profile Finder</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    input, button { padding: 10px; font-size: 16px; }
-    button { margin-left: 10px; }
-    ul { padding: 0; list-style: none; }
-    li { margin: 10px 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 40px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00d8ff;
+      text-shadow: 0 0 8px #00d8ff;
+    }
+    #username {
+      width: 75%;
+      padding: 12px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+      box-shadow: 0 0 10px #00d8ff44;
+      background: #222;
+      color: #eee;
+      transition: box-shadow 0.3s ease;
+    }
+    #username:focus {
+      box-shadow: 0 0 15px #00d8ffaa;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      background: #00d8ff;
+      color: #121212;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 10px;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #00b4d8;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 30px;
+    }
+    li {
+      padding: 14px 20px;
+      margin-bottom: 12px;
+      background: #222;
+      border-radius: 8px;
+      box-shadow: 0 0 5px #00d8ff66;
+      transition: background 0.3s ease;
+    }
+    li:hover {
+      background: #00d8ff22;
+    }
+    a {
+      color: #00d8ff;
+      text-decoration: none;
+      font-weight: 600;
+      word-break: break-word;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    #loading {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #00d8ff;
+    }
+    #error {
+      color: #ff5555;
+      font-weight: bold;
+      margin-top: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h2>🔎 Search Facebook Profiles</h2>
-  <input id="username" placeholder="Enter Facebook name" />
-  <button onclick="search()">Search</button>
+
+  <h1>Monzta Eyes 🔎</h1>
+
+  <div style="text-align:center;">
+    <input id="username" placeholder="Type Facebook username here..." autocomplete="off" />
+    <button onclick="search()">Search</button>
+  </div>
+
+  <div id="loading" style="display:none;">Searching...</div>
+  <div id="error"></div>
 
   <ul id="results"></ul>
 
   <script>
-    async function search() {
-      const name = document.getElementById('username').value.trim();
-      const resultsEl = document.getElementById('results');
-      resultsEl.innerHTML = "Loading...";
+    const backendUrl = 'https://monzta-eyes.onrender.com';
 
-      if (!name) {
-        resultsEl.innerHTML = "<li>Please enter a username.</li>";
+    async function search() {
+      const username = document.getElementById('username').value.trim();
+      const resultsEl = document.getElementById('results');
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('error');
+
+      resultsEl.innerHTML = '';
+      errorEl.innerHTML = '';
+
+      if (!username) {
+        errorEl.textContent = '⚠️ Please enter a Facebook username to search.';
         return;
       }
 
-      try {
-        // Replace with your actual backend URL
-        const backendUrl = 'https://monzta-eyes.onrender.com'; 
+      loadingEl.style.display = 'block';
 
-        const res = await fetch(`${backendUrl}/search?username=${encodeURIComponent(name)}`);
+      try {
+        const res = await fetch(`${backendUrl}/search?username=${encodeURIComponent(username)}`);
         const data = await res.json();
 
-        resultsEl.innerHTML = "";
+        loadingEl.style.display = 'none';
 
         if (data.error) {
-          resultsEl.innerHTML = `<li>Error: ${data.error}</li>`;
+          errorEl.textContent = `❌ Error: ${data.error}`;
           return;
         }
         if (data.message) {
-          resultsEl.innerHTML = `<li>${data.message}</li>`;
+          errorEl.textContent = `ℹ️ ${data.message}`;
+          return;
+        }
+
+        if (data.profiles.length === 0) {
+          errorEl.textContent = '😶 No profiles found.';
           return;
         }
 
@@ -51,10 +146,19 @@
           li.innerHTML = `<a href="${profile.profileUrl}" target="_blank" rel="noopener noreferrer">${profile.name}</a>`;
           resultsEl.appendChild(li);
         });
-      } catch (e) {
-        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
+      } catch (err) {
+        loadingEl.style.display = 'none';
+        errorEl.textContent = '🔥 Something went wrong. Please try again.';
       }
     }
+
+    // Optional: trigger search on Enter key
+    document.getElementById('username').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        search();
+      }
+    });
   </script>
+
 </body>
 </html>
