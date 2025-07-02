@@ -1,46 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Monzta Eyes - Facebook Lookup</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    input, button { padding: 10px; font-size: 16px; }
-    button { margin-left: 10px; }
-    ul { padding: 0; list-style: none; }
-    li { margin: 10px 0; }
-  </style>
-</head>
-<body>
-  <h2>🔐 Monzta Eyes Lookup Tool</h2>
-  <input id="username" placeholder="Type a name..." />
-  <button onclick="search()">Search</button>
-  <ul id="results"></ul>
+const express = require('express');
+const cors = require('cors');
 
-  <script>
-    async function search() {
-      const name = document.getElementById('username').value.trim();
-      const resultsEl = document.getElementById('results');
-      resultsEl.innerHTML = 'Loading...';
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-      try {
-        const res = await fetch(`https://monzta-eyes.onrender.com/search?username=${encodeURIComponent(name)}`);
-        const data = await res.json();
-        resultsEl.innerHTML = '';
+app.use(cors());
 
-        if (data.error || data.message) {
-          resultsEl.innerHTML = `<li>❗ ${data.error || data.message}</li>`;
-          return;
-        }
+// 🔍 Predefined Facebook profiles list
+const profiles = [
+  { name: "Shaun Dee", profileUrl: "https://www.facebook.com/ShaunDeeOfficial" },
+  { name: "Jane Doe", profileUrl: "https://www.facebook.com/janedoe" },
+  { name: "Benji Dog", profileUrl: "https://www.facebook.com/benjithedog" },
+  { name: "Eli Queen", profileUrl: "https://www.facebook.com/eli.queen.png" },
+  { name: "Donovan Pintol", profileUrl: "https://www.facebook.com/donovan.pintol" },
+  { name: "PNG Youth Advocate", profileUrl: "https://www.facebook.com/pngyouthvoice" },
+  { name: "Fake Profile Alert", profileUrl: "https://www.facebook.com/fakeprofilewatch" },
+  { name: "Row for the Future", profileUrl: "https://www.facebook.com/rowforthefuture" }
+];
 
-        data.profiles.forEach(profile => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="${profile.profileUrl}" target="_blank">${profile.name}</a>`;
-          resultsEl.appendChild(li);
-        });
-      } catch (e) {
-        resultsEl.innerHTML = `<li>❌ Failed to fetch profiles.</li>`;
-      }
-    }
-  </script>
-</body>
-</html>
+app.get('/search', (req, res) => {
+  const username = req.query.username?.toLowerCase();
+  if (!username) {
+    return res.status(400).json({ error: 'Missing username' });
+  }
+
+  const results = profiles.filter(p => p.name.toLowerCase().includes(username));
+  if (results.length === 0) {
+    return res.json({ message: '❗ No profiles found matching that username.' });
+  }
+
+  res.json({ profiles: results });
+});
+
+app.get('/', (req, res) => {
+  res.send("✅ Monzta Eyes is live. Use /search?username=NAME to test.");
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
