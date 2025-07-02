@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Monzta Eyes - Facebook Profile Checker</title>
+  <title>Monzta Eyes - Facebook Fake Profile Checker</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    input, button { padding: 10px; font-size: 16px; width: 400px; }
-    button { margin-top: 10px; display: block; }
-    .result { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; background: #f4f4f4; }
+    input, button { padding: 12px; font-size: 16px; width: 100%; margin: 5px 0; }
+    button { background: #4267B2; color: white; border: none; cursor: pointer; }
+    .result { margin-top: 20px; font-size: 17px; background: white; padding: 15px; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <h2>🕵️‍♂️ Monzta Eyes - Paste Facebook Profile Link</h2>
+  <h2>🔐 Monzta Eyes - Paste FB Profile Link</h2>
   <input id="linkInput" placeholder="Paste Facebook profile link..." />
   <button onclick="analyze()">Analyze Profile</button>
   <div id="result" class="result"></div>
@@ -19,7 +19,7 @@
     async function analyze() {
       const link = document.getElementById('linkInput').value.trim();
       const resultEl = document.getElementById('result');
-      resultEl.innerText = "🔄 Analyzing...";
+      resultEl.innerText = "🔍 Analyzing profile...";
 
       try {
         const res = await fetch(`https://monzta-eyes.onrender.com/analyze?url=${encodeURIComponent(link)}`);
@@ -28,7 +28,12 @@
         if (data.error) {
           resultEl.innerText = `❌ ${data.error}`;
         } else {
-          resultEl.innerText = `✅ Verdict: ${data.verdict}\n📄 Reason: ${data.reason}`;
+          resultEl.innerHTML = `
+            <b>✅ Verdict:</b> ${data.verdict}<br/>
+            <b>📄 Reason:</b> ${data.reason}<br/>
+            ${data.profilePic ? `<img src="${data.profilePic}" width="100" alt="Profile Picture"/>` : ''}
+            <br/><b>🔗 Profile:</b> <a href="${data.url}" target="_blank">View on Facebook</a>
+          `;
         }
       } catch (e) {
         resultEl.innerText = "❌ Failed to analyze. Please try again later.";
