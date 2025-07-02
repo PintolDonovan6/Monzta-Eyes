@@ -1,5 +1,16 @@
+const express = require('express');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const cors = require('cors');
+
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.use(cors());
+
 app.get('/analyze', async (req, res) => {
   const url = req.query.url;
+
   if (!url || !url.includes('facebook.com')) {
     return res.status(400).json({ error: 'Invalid Facebook profile URL' });
   }
@@ -10,30 +21,35 @@ app.get('/analyze', async (req, res) => {
     });
 
     const $ = cheerio.load(data);
-
-    let verdict = "Likely real";
-    let reason = "Profile appears normal.";
-
-    const title = $('title').text();
-    const hasPhoto = $('img').length > 0;
-    const isRandomName = /[0-9]{5,}/.test(url);
+    const title = $('title').text() || 'Unknown';
+    const profilePic = $('img').first().attr('src');
     const hasFriends = $('div').text().toLowerCase().includes('friends');
+    const randomNumbers = /[0-9]{4,}/.test(url);
 
-    if (!hasPhoto) {
-      verdict = "Suspicious";
-      reason = "Profile has no photos.";
-    }
-    if (isRandomName) {
-      verdict = "Likely fake";
-      reason = "Username contains random numbers.";
-    }
+    let verdict = 'Likely real';
+    let reason = 'Profile appears normal.';
+
     if (!hasFriends) {
-      verdict = "Suspicious";
-      reason = "No friends info detected.";
+      verdict = 'Suspicious';
+      reason = 'Could not detect friends or public info.';
     }
 
-    res.json({ verdict, reason });
+    if (randomNumbers) {
+      verdict = 'Likely fake';
+      reason = 'Profile URL contains unusual numbers.';
+    }
+
+    if (!profilePic) {
+      verdict = 'Suspicious';
+      reason = 'No profile photo detected.';
+    }
+
+    res.json({ verdict, reason, profilePic, title, url });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch or analyze profile. May be private or blocked." });
+    res.status(500).json({ error: "Could not analyze this profile. It may be private or blocked." });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`Monzta Eyes running on port ${PORT}`);
 });
