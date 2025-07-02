@@ -1,50 +1,39 @@
-const express = require('express');
-const axios = require('axios');
-const cheerio = require('cheerio');
-const cors = require('cors');
-
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-app.use(cors());
-
-app.get('/search', async (req, res) => {
-  const username = req.query.username;
-  if (!username) return res.status(400).json({ error: 'Missing username' });
+app.get('/analyze', async (req, res) => {
+  const url = req.query.url;
+  if (!url || !url.includes('facebook.com')) {
+    return res.status(400).json({ error: 'Invalid Facebook profile URL' });
+  }
 
   try {
-    const searchUrl = `https://www.facebook.com/public/${encodeURIComponent(username)}`;
-    const { data } = await axios.get(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
+    const { data } = await axios.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
     const $ = cheerio.load(data);
-    const results = [];
 
-    $('a[href^="https://www.facebook.com/"]').each((i, el) => {
-      const name = $(el).text().trim();
-      const profileUrl = $(el).attr('href');
-      if (name && profileUrl && profileUrl.startsWith('https://www.facebook.com/')) {
-        results.push({ name, profileUrl });
-      }
-    });
+    let verdict = "Likely real";
+    let reason = "Profile appears normal.";
 
-    if (results.length === 0) {
-      return res.json({ message: "❗ No profiles found matching that username." });
+    const title = $('title').text();
+    const hasPhoto = $('img').length > 0;
+    const isRandomName = /[0-9]{5,}/.test(url);
+    const hasFriends = $('div').text().toLowerCase().includes('friends');
+
+    if (!hasPhoto) {
+      verdict = "Suspicious";
+      reason = "Profile has no photos.";
+    }
+    if (isRandomName) {
+      verdict = "Likely fake";
+      reason = "Username contains random numbers.";
+    }
+    if (!hasFriends) {
+      verdict = "Suspicious";
+      reason = "No friends info detected.";
     }
 
-    res.json({ profiles: results.slice(0, 5) });
+    res.json({ verdict, reason });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch Facebook profiles" });
+    res.status(500).json({ error: "Failed to fetch or analyze profile. May be private or blocked." });
   }
-});
-
-app.get('/', (req, res) => {
-  res.send("✅ API is live. Use /search?username=NAME to fetch profiles.");
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
