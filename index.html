@@ -1,41 +1,39 @@
-const express = require('express');
-const cors = require('cors');
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monzta Eyes - Facebook Profile Checker</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; }
+    input, button { padding: 10px; font-size: 16px; width: 400px; }
+    button { margin-top: 10px; display: block; }
+    .result { margin-top: 20px; font-size: 18px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>🕵️‍♂️ Monzta Eyes - Paste Facebook Profile Link</h2>
+  <input id="linkInput" placeholder="Paste Facebook profile link..." />
+  <button onclick="analyze()">Analyze Profile</button>
+  <div id="result" class="result"></div>
 
-const app = express();
-const PORT = process.env.PORT || 10000;
+  <script>
+    async function analyze() {
+      const link = document.getElementById('linkInput').value.trim();
+      const resultEl = document.getElementById('result');
+      resultEl.innerText = "🔄 Analyzing...";
 
-app.use(cors());
+      try {
+        const res = await fetch(`https://monzta-eyes.onrender.com/analyze?url=${encodeURIComponent(link)}`);
+        const data = await res.json();
 
-// 🔍 Predefined Facebook profiles list
-const profiles = [
-  { name: "Shaun Dee", profileUrl: "https://www.facebook.com/ShaunDeeOfficial" },
-  { name: "Jane Doe", profileUrl: "https://www.facebook.com/janedoe" },
-  { name: "Benji Dog", profileUrl: "https://www.facebook.com/benjithedog" },
-  { name: "Eli Queen", profileUrl: "https://www.facebook.com/eli.queen.png" },
-  { name: "Donovan Pintol", profileUrl: "https://www.facebook.com/donovan.pintol" },
-  { name: "PNG Youth Advocate", profileUrl: "https://www.facebook.com/pngyouthvoice" },
-  { name: "Fake Profile Alert", profileUrl: "https://www.facebook.com/fakeprofilewatch" },
-  { name: "Row for the Future", profileUrl: "https://www.facebook.com/rowforthefuture" }
-];
-
-app.get('/search', (req, res) => {
-  const username = req.query.username?.toLowerCase();
-  if (!username) {
-    return res.status(400).json({ error: 'Missing username' });
-  }
-
-  const results = profiles.filter(p => p.name.toLowerCase().includes(username));
-  if (results.length === 0) {
-    return res.json({ message: '❗ No profiles found matching that username.' });
-  }
-
-  res.json({ profiles: results });
-});
-
-app.get('/', (req, res) => {
-  res.send("✅ Monzta Eyes is live. Use /search?username=NAME to test.");
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+        if (data.error) {
+          resultEl.innerText = `❌ ${data.error}`;
+        } else {
+          resultEl.innerText = `✅ Verdict: ${data.verdict}\n📄 Reason: ${data.reason}`;
+        }
+      } catch (e) {
+        resultEl.innerText = "❌ Failed to analyze. Please try again later.";
+      }
+    }
+  </script>
+</body>
+</html>
